@@ -9,7 +9,7 @@ s.bind(f"tcp://{HOST}:{PORT}")
 
 def get_weather():
     try:
-        # Fetch data for Goiânia, Brazil (in metric units)
+        # Fetch data for Goiânia, Brazil
         response = requests.get("https://wttr.in/Goiânia?format=%C+%t+%h&m")
         weather, temp, humidity = response.text.strip().split()
         return {
@@ -22,7 +22,7 @@ def get_weather():
         return None
 
 while True:
-    time.sleep(10)  # Be gentle with free services
+    time.sleep(20)
     data = get_weather()
     
     # Publish TIME
