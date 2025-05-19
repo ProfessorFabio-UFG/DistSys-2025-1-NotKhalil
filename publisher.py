@@ -1,21 +1,35 @@
-import zmq, time
-from constPS import *  #-
+import zmq
+import time
+import requests
+from constPS import *
 
 context = zmq.Context()
-s = context.socket(zmq.PUB)        # create a publisher socket
-p = "tcp://" + HOST + ":" + PORT  # how and where to communicate
-s.bind(p)                          # bind socket to the address
+s = context.socket(zmq.PUB)
+s.bind(f"tcp://{HOST}:{PORT}")
+
+def get_weather():
+    try:
+        # Fetch data for Goiânia, Brazil (in metric units)
+        response = requests.get("https://wttr.in/Goiânia?format=%C+%t+%h&m")
+        weather, temp, humidity = response.text.strip().split()
+        return {
+            'temp': temp,
+            'humidity': humidity.replace('%', ''),
+            'weather': weather
+        }
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 while True:
-    time.sleep(5)                   # wait every 5 seconds
+    time.sleep(10)  # Be gentle with free services
+    data = get_weather()
+    
     # Publish TIME
-    msg_time = str.encode("TIME " + time.asctime())
-    s.send(msg_time)
-    # Publish Weather
-    weather_status = "Sunny in Goiânia, Goiás, Brazil"
-    msg_weather = str.encode(f"Weather {weather_status}")
-    s.send(msg_weather)
-    # Publish humidity
-    humidity_value = "65% in Goiânia, Goiás, Brazil"
-    msg_humidity = str.encode(f"humidity {humidity_value}")
-    s.send(msg_humidity)
+    s.send_string(f"TIME {time.ctime()}")
+    
+    if data:
+        # Publish Weather
+        s.send_string(f"Weather {data['weather']}, {data['temp']} in Goiânia")
+        # Publish humidity
+        s.send_string(f"humidity {data['humidity']}% in Goiânia")
